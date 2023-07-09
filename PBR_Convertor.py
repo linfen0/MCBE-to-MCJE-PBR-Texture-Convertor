@@ -130,4 +130,5 @@ def BeheightMap2AO(self,height_map, light_pos, scale=1.0, intensity=1.0, radius=
     
     return ao_map
  
-        
+ 
+ 
