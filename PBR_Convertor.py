@@ -57,7 +57,7 @@ class Be2Je:
         self.je_emissive_map=Image.eval(be_emissive_map,lambda x:0.95*x)
         
         self.labPBR_specular=Image.merge('RGBA',(self.je_smoothness_map,self.je_base_reflectance_map,self.je_subsurface_scatterin_map,self.je_emissive_map))
-        return 1
+        return 1 
     
     def __mergeNormal():
         pass
@@ -83,20 +83,20 @@ class Be2Je:
         y_tangent_vector_martrix[0,:,2]=(be_heightmap_array[1,:]/255 - be_heightmap_array[0,:]/255) / min(100.0,max(1,100-strength))
         y_tangent_vector_martrix[-1,:,2]=(be_heightmap_array[-1,:]/255 - be_heightmap_array[-2,:]/255) / min(100.0,max(1,100-strength))
         normal_vector_martrix=np.cross(y_tangent_vector_martrix[:,:],x_tangent_vector_martrix[:,:])
-      
+          
         for v in range(image_width):
             for u in range(image_height):
                 #norlmalize vector
                 normal_vector_martrix[u,v]=normal_vector_martrix[u,v]/np.linalg.norm(normal_vector_martrix[u,v])
                 #valued normal to je_n_map_array
                 je_n_map_array[u,v,:2]=((normal_vector_martrix[u,v,:2]+1)*128)
-                #value heightmap to je_n_map
-                je_n_map_array[u,v,3]=be_heightmap_array[u,v]
         
         
         return je_n_map_array
 
+
 def BeheightMap2AO(self,height_map, light_pos, scale=1.0, intensity=1.0, radius=1.0):
+    '''投影法计算阴影方向/长度'''
     # 从高度图计算法线图
     normals = self.BeHeightmap2Normal(height_map)
     
