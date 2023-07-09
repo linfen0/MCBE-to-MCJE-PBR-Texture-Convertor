@@ -90,7 +90,8 @@ class Be2Je:
                 normal_vector_martrix[u,v]=normal_vector_martrix[u,v]/np.linalg.norm(normal_vector_martrix[u,v])
                 #valued normal to je_n_map_array
                 je_n_map_array[u,v,:2]=((normal_vector_martrix[u,v,:2]+1)*128)
-        
+                #valued heightmap to je_n_map Alpha channel
+                je_n_map_array[u,v,3]=be_heightmap[u,v]
         
         return je_n_map_array
 
