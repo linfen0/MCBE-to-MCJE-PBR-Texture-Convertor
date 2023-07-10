@@ -16,27 +16,27 @@ class Be2Je:
     '''一个方块面的所有纹理(textureset以及对应的各种纹理),是一个待转换对象'''
     def __init__(self,textureSetPath:json):
             textureSet=json.load(textureSetPath)
-            self.be_base_color_map=textureSet["minecraft:texture_set"].color
-            self.be_pbr_mer_map=textureSet["minecraft:texture_set"].mer
             
+            self.be_base_color=Image.open(textureSet["minecraft:texture_set"].color)
+            self.be_pbr_mer_map=Image.open(textureSet["minecraft:texture_set"].mer)
             try:
-                self.be_heightmap=textureSet["minecraft:texture_set"].heightmap
+                self.be_heightmap=Image.open(textureSet["minecraft:texture_set"].heightmap)
             except Exception as e:
-                self.be_normalmap=textureSet["minecraft:texture_set"].normal
-                
-            self.image=None
+                self.be_normalmap=Image.open(textureSet["minecraft:texture_set"].normal)
+            
             self.labPBR_smoothness=None
-            self.labPBR_specular= self.BePbr2Specular()
+            self.labPBR_specular= None
             self.labPBR_normal=None
 
             
-    def __F0calculator(be_base_color,be_metallic_map):
-        gray_image=be_base_color
+    def __F0calculator(self,metallic_map):
+        
+        gray_image=self.be_base_color.convert('L')
         image_size=gray_image.size()
         image_width=image_size[1]
         image_height=image_size[0]
         gray_image_array=array(gray_image)
-        matelic_map_array=array(be_metallic_map)
+        matelic_map_array=array(metallic_map)
         je_F0_map=np.zeros((image_height,image_width))
            
         SpecularScale=0.5  #that tutorial said the default value is 0.5 but i do not know why
@@ -48,14 +48,14 @@ class Be2Je:
                 
         return Image.fromarray(je_F0_map,mode="L")
 
-    def BePbr2Specular(self,be_base_color,be_pbr_mer):
+    def BePbr2Specular(self):
         #Using *extra allows for the tuple splitedImage to be unpacked correctly, 
         #regardless of the number of elements it contains'''
-        be_base_color=be_base_color
-        be_metallic_map,be_emissive_map,be_roughness_map=Image.split(be_pbr_mer);
+        
+        be_metallic_map,be_emissive_map,be_roughness_map=Image.split(self.be_pbr_mer_map);
         
         self.je_smoothness_map=Image.eval(be_roughness_map,lambda x:255*(1-sqrt(x/255)))
-        self.je_base_reflectance_map= self.__F0calculator(be_base_color,be_metallic_map) 
+        self.je_base_reflectance_map= self.__F0calculator(be_metallic_map) 
         
         #bedrock edition does not support subsurface_scatterin so i set it to a const value
         self.je_subsurface_scatterin_map=Image.eval(be_roughness_map,lambda X:X-X+5)
@@ -68,10 +68,11 @@ class Be2Je:
     def BeheightMap2NormalMap(self,lightPos:ndarray):
         
         normalmaps=self.__getNormal(self.be_heightmap)
-        normalx,normaly,normalz,heightmap=Image.split(normalmaps)
+        normalmapslist=list(Image.split(normalmaps))
         AOmap=self.__getAO(normalmaps,lightPos)
+        self.labPBR_normal=Image.merge('RGBA',(normalmapslist[0],normalmapslist[1],AOmap,self.be_heightmap))
         
-        return  Image.merge('RGBA',(normalx,normaly,AOmap,heightmap))
+        return self.labPBR_normal
         
         
     
