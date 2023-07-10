@@ -65,10 +65,17 @@ class Be2Je:
         
         return 1 
     
-    def __mergeNormal():
-        pass
+    def BeheightMap2NormalMap(self,lightPos:ndarray):
+        
+        normalmaps=self.__getNormal(self.be_heightmap)
+        normalx,normaly,normalz,heightmap=Image.split(normalmaps)
+        AOmap=self.__getAO(normalmaps,lightPos)
+        
+        return  Image.merge('RGBA',(normalx,normaly,AOmap,heightmap))
+        
+        
     
-    def BeHeightmap2Normal(be_heightmap,strength=0):
+    def __getNormal(be_heightmap,strength=0):
         '''accecpt an be_heightmap,the strength para determined the strength of normal'''
         
         image_height,image_width=be_heightmap.size() #create vector
@@ -107,13 +114,11 @@ class Be2Je:
                 
                 je_n_map_array[u,v,3]=be_heightmap[u,v] #valued heightmap to je_n_map Alpha channel
         
-        return je_n_map_array
+        return Image.fromarray(je_n_map_array)
 
 
-def BeheightMap2AO(self,height_map, light_pos, scale=1.0, intensity=1.0, radius=1.0):
-    '''投影法计算阴影方向/长度'''
-    # 从高度图计算法线图
-    normals = self.BeHeightmap2Normal(height_map)
+def __getAO(normals,light_pos:ndarray,intensity=1.0, radius=1.0):
+    '''Using project method to get  '''
     
     # 计算光源相对于高度图中每个点的方向
     light_dir = light_pos - np.indices(normals.shape[:2]).transpose((1, 2, 0))
@@ -128,7 +133,5 @@ def BeheightMap2AO(self,height_map, light_pos, scale=1.0, intensity=1.0, radius=
     # 使用高斯滤波器模糊结果，模拟软阴影效果
     ao_map = gaussian_filter(ao_map, radius)
     
-    return ao_map
- 
- 
+    return Image.fromarray(ao_map)
  
