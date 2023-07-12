@@ -14,28 +14,47 @@ fileList = os.listdir(input_filePath)
 
 class Be2Je:
     '''一个方块面的所有纹理(textureset以及对应的各种纹理),是一个待转换对象'''
-    def __init__(self,textureSetPath:json):
+    def __init__(self,input_filePath:str,textureSetPath:json):
             textureSet=json.load(textureSetPath)
             
-            self.be_base_color=Image.open(textureSet["minecraft:texture_set"].color)
-            self.be_pbr_mer_map=Image.open(textureSet["minecraft:texture_set"].mer)
+            self.be_base_color=Image.open(input_filePath+textureSet["minecraft:texture_set"].color)
+            self.be_pbr_mer_map=Image.open(input_filePath+textureSet["minecraft:texture_set"].mer)
             try:
-                self.be_heightmap=Image.open(textureSet["minecraft:texture_set"].heightmap)
+                self.be_heightmap=Image.open(input_filePath+textureSet["minecraft:texture_set"].heightmap)
             except Exception as e:
-                self.be_normalmap=Image.open(textureSet["minecraft:texture_set"].normal)
+                self.be_normalmap=Image.open(input_filePath+textureSet["minecraft:texture_set"].normal)
             
-            self.labPBR_smoothness=None
             self.labPBR_specular= None
             self.labPBR_normal=None
 
+            self.lightPos=np.array([30,40,50])
             
-    def __F0calculator(self,metallic_map):
+    def getSpecularMaps(self):
+        #Using *extra allows for the,, tuple splitedImage to be unpacked correctly, 
+        #regardless of the number of elements it contains'''
+        
+        be_metallic_map,be_emissive_map,be_roughness_map=Image.split(self.be_pbr_mer_map);
+        
+        je_smoothness_map=Image.eval(be_roughness_map,lambda x:255*(1-sqrt(x/255)))
+        je_base_reflectance_map= self.__CalculateF0(be_metallic_map) 
+        
+        #bedrock edition does not support subsurface_scatterin so i set it to a const value
+        je_subsurface_scatterin_map=Image.eval(be_roughness_map,lambda X:X-X+5)
+        je_emissive_map=Image.eval(be_emissive_map,lambda x:0.95*x)
+        
+        self.labPBR_specular=Image.merge('RGBA',(je_smoothness_map,je_base_reflectance_map,je_subsurface_scatterin_map,je_emissive_map))
+        
+        return 1 
+                
+    def __CalculateF0(self,metallic_map):
         
         gray_image=self.be_base_color.convert('L')
+        
         image_size=gray_image.size()
         image_width=image_size[1]
         image_height=image_size[0]
         gray_image_array=array(gray_image)
+        
         matelic_map_array=array(metallic_map)
         je_F0_map=np.zeros((image_height,image_width))
            
@@ -48,35 +67,20 @@ class Be2Je:
                 
         return Image.fromarray(je_F0_map,mode="L")
 
-    def BePbr2Specular(self):
-        #Using *extra allows for the tuple splitedImage to be unpacked correctly, 
-        #regardless of the number of elements it contains'''
+
+    def getNormalMaps(self):
         
-        be_metallic_map,be_emissive_map,be_roughness_map=Image.split(self.be_pbr_mer_map);
+        normalmaps=self.__CalculateNormal(self.be_heightmap)
         
-        self.je_smoothness_map=Image.eval(be_roughness_map,lambda x:255*(1-sqrt(x/255)))
-        self.je_base_reflectance_map= self.__F0calculator(be_metallic_map) 
-        
-        #bedrock edition does not support subsurface_scatterin so i set it to a const value
-        self.je_subsurface_scatterin_map=Image.eval(be_roughness_map,lambda X:X-X+5)
-        self.je_emissive_map=Image.eval(be_emissive_map,lambda x:0.95*x)
-        
-        self.labPBR_specular=Image.merge('RGBA',(self.je_smoothness_map,self.je_base_reflectance_map,self.je_subsurface_scatterin_map,self.je_emissive_map))
-        
-        return 1 
-    
-    def BeheightMap2NormalMap(self,lightPos:ndarray):
-        
-        normalmaps=self.__getNormal(self.be_heightmap)
         normalmapslist=list(Image.split(normalmaps))
-        AOmap=self.__getAO(normalmaps,lightPos)
+        AOmap=self.__CalculateAO(normalmaps)
         self.labPBR_normal=Image.merge('RGBA',(normalmapslist[0],normalmapslist[1],AOmap,self.be_heightmap))
         
         return self.labPBR_normal
         
         
     
-    def __getNormal(be_heightmap,strength=0):
+    def __CalculateNormal(be_heightmap,strength=0):
         '''accecpt an be_heightmap,the strength para determined the strength of normal'''
         
         image_height,image_width=be_heightmap.size() #create vector
@@ -118,11 +122,11 @@ class Be2Je:
         return Image.fromarray(je_n_map_array)
 
 
-    def __getAO(self,normals,light_pos:ndarray,intensity=1.0, radius=1.0):
-        '''Using project method to get  '''
+    def __CalculateAO(self,normals,intensity=1.0, radius=1.0):
+        '''Calculate   '''
         
         # 计算光源相对于高度图中每个点的方向
-        light_dir = light_pos - np.indices(normals.shape[:2]).transpose((1, 2, 0))
+        light_dir = self.lightPos - np.indices(normals.shape[:2]).transpose((1, 2, 0))
         light_dir /= np.sqrt(np.sum(light_dir**2, axis=2))[..., np.newaxis]
         
         # 计算法线和光照方向的点积
