@@ -124,13 +124,13 @@ class Be2Je:
 
     def __CalculateAO(self,normals,intensity=1.0, radius=1.0):
         '''Calculate   '''
-        
+        normal_array = np.ndarray(normals)
         # 计算光源相对于高度图中每个点的方向
         light_dir = self.lightPos - np.indices(normals.shape[:2]).transpose((1, 2, 0))
         light_dir /= np.sqrt(np.sum(light_dir**2, axis=2))[..., np.newaxis]
         
         # 计算法线和光照方向的点积
-        dot_product = np.sum(normals * light_dir, axis=2)
+        dot_product = np.sum(normal_array * light_dir, axis=2)
         
         # 应用环境光遮蔽效果
         ao_map = np.clip(dot_product, 0, 1)**intensity
