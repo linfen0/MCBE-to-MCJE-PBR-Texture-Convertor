@@ -14,20 +14,26 @@ fileList = os.listdir(input_filePath)
 
 class Be2Je:
     '''一个方块面的所有纹理(textureset以及对应的各种纹理),是一个待转换对象'''
-    def __init__(self,input_filePath:str,textureSetPath:json):
-            textureSet=json.load(textureSetPath)
+    def __init__(self,textureSetPath:str):
+        with open(textureSetPath) as textureSetFile:
             
-            self.be_base_color=Image.open(input_filePath+textureSet["minecraft:texture_set"].color)
-            self.be_pbr_mer_map=Image.open(input_filePath+textureSet["minecraft:texture_set"].mer)
             try:
-                self.be_heightmap=Image.open(input_filePath+textureSet["minecraft:texture_set"].heightmap)
+                textureSet=json.load(textureSetFile)
             except Exception as e:
-                self.be_normalmap=Image.open(input_filePath+textureSet["minecraft:texture_set"].normal)
+                pass
+            
+        self.be_base_color=Image.open(textureSet["minecraft:texture_set"].color)
+        self.be_pbr_mer_map=Image.open(textureSet["minecraft:texture_set"].mer)
+        
+        try:
+            self.be_heightmap=Image.open(textureSet["minecraft:texture_set"].heightmap)
+        except Exception as e:
+            self.be_normalmap=Image.open(textureSet["minecraft:texture_set"].normal)
           
-            self._labPBR_specular= None
-            self.labPBR_normal=None
+        self._labPBR_specular= None
+        self.labPBR_normal=None
 
-            self.lightPos=np.array([30,40,50])
+        self.lightPos=np.array([30,40,50])
     
     def editLightPos(self,x:int ,y:int,z:int) -> void:
         self.ightPos=np.array([x,y,z])
