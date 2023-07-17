@@ -15,20 +15,20 @@ fileList = os.listdir(input_filePath)
 class Be2Je:
     '''一个方块面的所有纹理(textureset以及对应的各种纹理),是一个待转换对象'''
     def __init__(self,textureSetPath:str):
+        
         with open(textureSetPath) as textureSetFile:
-            
-            try:
                 textureSet=json.load(textureSetFile)
-            except Exception as e:
-                pass
-            
-        self.be_base_color=Image.open(textureSet["minecraft:texture_set"].color)
-        self.be_pbr_mer_map=Image.open(textureSet["minecraft:texture_set"].mer)
+                    
+        pathPrefix=os.path.split(textureSetPath)[0]
+        
+        self.be_base_color=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"].color+".png"))
+        
+        self.be_pbr_mer_map=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"].mer+".png"))
         
         try:
-            self.be_heightmap=Image.open(textureSet["minecraft:texture_set"].heightmap)
+            self.be_heightmap=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"].heightmap+".png"))
         except Exception as e:
-            self.be_normalmap=Image.open(textureSet["minecraft:texture_set"].normal)
+            self.be_normalmap=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"].normal+".png"))
           
         self._labPBR_specular= None
         self.labPBR_normal=None
