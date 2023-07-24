@@ -1,27 +1,50 @@
-from Convertor import PBR_Convertor as PBRC
+from convertor import PBR_Convertor as PBRC
+
 import PySimpleGUI as sg
 
-layout = [[sg.Text('A custom progress meter')],
-          [sg.ProgressBar(1000, orientation='h', size=(20, 20), key='progressbar')],
-          [sg.Cancel()]]
+input_dir=""    
+output_dir=""
 
-window = sg.Window('Custom Progress Meter', layout)
-progress_bar = window['progressbar']
-# loop that would normally do something useful
-for i in range(1000):
-    # check to see if the cancel button was clicked and exit loop if clicked
-    event, values = window.read(timeout=10)
-    if event == 'Cancel'  or event is None:
+
+
+temp_n="image"
+temp_s="image"
+
+
+import PySimpleGUI as sg
+
+# 定义布局
+layout = [
+    [sg.Text('欢迎使用PySimpleGUI示例')],
+    [sg.InputText()],
+    [sg.Button('OK'), sg.Button('取消')]
+]
+
+# 创建窗口
+window = sg.Window('示例窗口', layout)
+
+# 事件循环
+while True:
+    event, values = window.read()
+    if event in (sg.WIN_CLOSED, '取消'):
         break
-  # update bar with loop value +1 so that bar eventually reaches the maximum
-    progress_bar.UpdateBar(i + 1)
-# done with loop... need to destroy the window as it's still open
+    if event == 'OK':
+        input_text = values[0]
+        sg.popup(f'您输入的内容是：{input_text}')
+
+# 关闭窗口
 window.close()
 
-
-window = sg.Window("Windows-like program",layout)
-window.disappear() # 窗口隐藏
-window.reappear() # 窗口展示
-window = sg.Window('My window with tabs', layout, font=("宋体", 15),default_element_size=(50,1)) 
-
-
+#after commit path
+''' for f in input_dir:
+    if f.name=="json的textture_set":
+        
+        json_path="prefix"+f.name
+        with open(json_path) as texture_sets_file:
+            convertor=PBRC.Be2Je(texture_sets_file)
+            try:
+                temp_n=convertor.get_normal_maps()
+                temp_s=convertor.get_specular_maps()
+            except Exception as e:
+                pass
+         '''
