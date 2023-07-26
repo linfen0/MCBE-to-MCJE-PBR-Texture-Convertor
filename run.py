@@ -1,50 +1,31 @@
 from convertor import PBR_Convertor as PBRC
-
 import PySimpleGUI as sg
+import os
 
 input_dir=""    
 output_dir=""
 
-
-
-temp_n="image"
-temp_s="image"
-
-
-import PySimpleGUI as sg
-
-# 定义布局
-layout = [
-    [sg.Text('欢迎使用PySimpleGUI示例')],
-    [sg.InputText()],
-    [sg.Button('OK'), sg.Button('取消')]
-]
-
-# 创建窗口
-window = sg.Window('示例窗口', layout)
-
-# 事件循环
-while True:
-    event, values = window.read()
-    if event in (sg.WIN_CLOSED, '取消'):
-        break
-    if event == 'OK':
-        input_text = values[0]
-        sg.popup(f'您输入的内容是：{input_text}')
-
-# 关闭窗口
-window.close()
-
 #after commit path
-''' for f in input_dir:
-    if f.name=="json的textture_set":
-        
-        json_path="prefix"+f.name
-        with open(json_path) as texture_sets_file:
-            convertor=PBRC.Be2Je(texture_sets_file)
-            try:
-                temp_n=convertor.get_normal_maps()
-                temp_s=convertor.get_specular_maps()
-            except Exception as e:
-                pass
-         '''
+
+def converter(input_dir,output_dir):
+    import glob
+    
+    pattern = os.path.join(input_dir, f"*.texture_set.json")
+    patterned_list=glob.glob(pattern)
+    
+    for file_path in patterned_list:
+            block_name=file_path.split(".")[0]
+            with open(file_path) as texture_sets_file:
+                
+                convertor=PBRC.Be2Je(texture_sets_file)
+    
+                try:
+                    temp_n=convertor.get_normal_maps()
+                    temp_n.save(os.join(output_dir,block_name+"_n.png"))
+                    
+                    temp_s=convertor.get_specular_maps()
+                    temp_s.save(os.join(output_dir,block_name+"_s.png"))
+                    
+                except Exception as e:
+                    pass
+            
