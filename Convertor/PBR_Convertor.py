@@ -18,19 +18,21 @@ class Be2Je: # BedrockToJavaTextureConverter
         
         self.be_base_color=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"]["color"]+".png"))
         
-        self.be_pbr_mer_map=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"]["mer"]+".png"))
+        self.be_pbr_mer_map=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"]["metalness_emissive_roughness"]+".png"))
         
         try:
             self.be_heightmap=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"]["heightmap"]+".png"))
         except Exception as e:
             self.be_normalmap=Image.open(os.path.join(pathPrefix,textureSet["minecraft:texture_set"]["normal"]+".png"))
           
-        self._labPBR_specular= None
-        self.labPBR_normal=None
+        self.labPBR_specular= None
+        self.labPBR_normal= None
 
-        self.lightPos=np.array([30,40,50])
+        self.lightPos=np.array([3.0,4.0,5.0])
+       
+        
     
-    def edit_light_position(self,x:int ,y:int,z:int):
+    def edit_light_position(self,x ,y,z):
         self.lightPos=np.array([x,y,z])
     
     
@@ -38,7 +40,8 @@ class Be2Je: # BedrockToJavaTextureConverter
         #Using *extra allows for the,, tuple splitedImage to be unpacked correctly, 
         #regardless of the number of elements it contains'''
         if self.labPBR_specular==None:
-            be_metallic_map,be_emissive_map,be_roughness_map=Image.split(self.be_pbr_mer_map);
+            
+            be_metallic_map,be_emissive_map,be_roughness_map=self.be_pbr_mer_map.split();
             
             je_smoothness_map=Image.eval(be_roughness_map,lambda x:255*(1-sqrt(x/255)))
             je_base_reflectance_map= self.__calculate_f0(be_metallic_map) 
@@ -73,12 +76,15 @@ class Be2Je: # BedrockToJavaTextureConverter
         return Image.fromarray(je_F0_map,mode="L")
 
 
-    def get_normal_maps(self):
+    def get_normal_ao_maps(self):
         if self.labPBR_normal == None:
-            normalmaps=self.__calculate_normal(self.be_heightmap)
+            normalmaps=self.__calculate_normal()
             
-            normalmapslist=Image.split(normalmaps)
-            AOmap=self.__calculate_ao(normalmaps)
+            normalmaps_normalize = np.array(normalmaps)
+            normalmaps_normalize = (normalmaps_normalize/128-1)
+            
+            normalmapslist=normalmaps.split()
+            AOmap=self.__calculate_ao(normalmaps_normalize)
             
             self.labPBR_normal=Image.merge('RGBA',(normalmapslist[0],normalmapslist[1],AOmap,self.be_heightmap))
         
@@ -86,14 +92,14 @@ class Be2Je: # BedrockToJavaTextureConverter
         
         
     
-    def __calculate_normal(be_heightmap: Image, strength=0):
+    def __calculate_normal(self,strength=0):
         '''accecpt an be_heightmap,the strength para determined the strength of normal'''
         
-        image_width,image_height=be_heightmap.size #create vector
-        be_heightmap_array=np.array(be_heightmap)
+        image_width,image_height=self.be_heightmap.size #create vector
+        be_heightmap_array=np.array(self.be_heightmap)
         je_n_map_array=np.zeros((image_height,image_width,4), dtype=np.uint8)#分别为法线的xy[对应RG](另外的分量通过模长为1计算出来)和B—AO和alpha-heightmap
-        x_tangent_vector_martrix=np.zeros((image_height,image_width,3), dtype=np.float32)
-        y_tangent_vector_martrix= np.zeros((image_height,image_width,3), dtype=np.float32)
+        x_tangent_vector_martrix=np.zeros((image_height,image_width,3), dtype=np.float16)
+        y_tangent_vector_martrix= np.zeros((image_height,image_width,3), dtype=np.float16)
         
         #init obove vector
         x_tangent_vector_martrix[:,:,1]=1
@@ -121,29 +127,33 @@ class Be2Je: # BedrockToJavaTextureConverter
                 
                 normal_vector_martrix[u,v]=normal_vector_martrix[u,v]/np.linalg.norm(normal_vector_martrix[u,v]) #norlmalize vector
                
-                je_n_map_array[u,v,:2]=((normal_vector_martrix[u,v,:2]+1)*128)  #valued normal to je_n_map_array
+                je_n_map_array[u,v,:3]=((normal_vector_martrix[u,v,:3]+1)*128)  #valued normal to je_n_map_array
                 
-                je_n_map_array[u,v,3]=be_heightmap[u,v] #valued heightmap to je_n_map Alpha channel
+                
         
         return Image.fromarray(je_n_map_array)
 
 
-    def __calculate_ao(self,normals,intensity=1.0, radius=1.0):
+    def __calculate_ao(self,normals:np.ndarray,intensity=1.0, radius=1.0):
         '''Calculate   '''
-        normal_array = np.array(normals)
         # 计算光源相对于高度图中每个点的方向
-        light_dir = self.lightPos - np.indices(normals.shape[:2]).transpose((1, 2, 0))
-        light_dir /= np.sqrt(np.sum(light_dir**2, axis=2))[..., np.newaxis]
+        light_dir = self.lightPos - normals[:,:,:3]
+        light_dir /= np.linalg.norm(light_dir) #归一化
         
+        print("\nlight_dir",light_dir)
         # 计算法线和光照方向的点积
-        dot_product = np.sum(normal_array * light_dir, axis=2)
+        ao_map_array = ( 
+                        (normals[:,:,:3] * light_dir)**intensity /
+                        np.linalg.norm((normals[:,:,:3] * light_dir)**intensity) )
         
         # 应用环境光遮蔽效果
-        ao_map = np.clip(dot_product, 0, 1)**intensity
-        
+        print("\nao_map",ao_map_array)
         # 使用高斯滤波器模糊结果，模拟软阴影效果
-        ao_map = gaussian_filter(ao_map, radius)
+        ao_map_array = gaussian_filter(ao_map_array, radius)
         
-        return Image.fromarray(ao_map)
+        print("\nao_map",ao_map_array)
+        ao_map=Image.fromarray(((ao_map_array+1)*128).astype(np.int8),mode='RGB').convert('L')
+               
+        return ao_map
     
     
