@@ -2,7 +2,7 @@ from convertor import PBR_Convertor as PBRC
 import PySimpleGUI as sg
 import os
 
-def converter(files_number,process_folder):
+def converter(files_number,process_folder,output_dir):
     layout = [
           [sg.Text("Converting")]
           [sg.ProgressBar(files_number, orientation='h', size=(20, 20), key='progressbar'),sg.Text(key="file_name")],
@@ -42,6 +42,8 @@ def converter(files_number,process_folder):
         
     if len(faild_list)!=0:
         sg.popup("File belowed faild to convert !"+faild_list,no_titleba=True)
+        import json
+        
 
 layout = [
               [sg.Input("Enter bedrock 'Blocks' folder",key='input'),sg.FolderBrowse(key='_BUTTON_KEY_',target='input')],
@@ -62,7 +64,7 @@ while True:
         if files_num==0:
             sg.popup("Found no .textture_set.json file at that folder!")
         else:
-            converter(files_num,patterned_list)
+            converter(files_num,patterned_list,value["output"])
             pass
         
     if event== None or event== sg.WINDOW_CLOSED:
