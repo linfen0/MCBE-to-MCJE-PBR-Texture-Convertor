@@ -4,9 +4,10 @@ import os
 
 def converter(files_number,process_folder,output_dir):
     layout = [
-          [sg.Text("Converting")]
-          [sg.ProgressBar(files_number, orientation='h', size=(20, 20), key='progressbar'),sg.Text(key="file_name")],
-          [sg.Cancel("interupt")]
+          [sg.Text("Converting")],
+          [sg.ProgressBar(files_number, orientation='h', size=(20, 20), key='progressbar')],
+          [sg.Text(key="file_name")],
+          [sg.OK("start!")]
               ]
     window=sg.Window("Converting",layout)
     text=window["file_name"]
@@ -14,34 +15,41 @@ def converter(files_number,process_folder,output_dir):
     
     failed_list=[]
     
+    processed_num=0
+    
+    window.read()
     for file_path in process_folder:
-        processed_num=0
+        
         try:
             convertor=PBRC.Be2Je(file_path)
-            
+                
             _,block_name=os.path.split(file_path)
             block_name=block_name.split('.')[0]
-            
+                
             temp_n=convertor.get_normal_ao_maps()
-            
+                
             temp_n.save(os.path.join(output_dir,block_name+"_n.png"))
             print(os.path.join(output_dir,block_name+"_n.png","converted"))
-                  
+                    
             temp_s=convertor.get_specular_maps()
             temp_s.save(os.path.join(output_dir,block_name+"_s.png"))
-                
+                    
             print(os.path.join(output_dir,block_name+"_s.png","converted"))
-            
+                
             text.update(file_path)
             processed_num+=1
+            
             progress_bar.UpdateBar(processed_num)
-           
         except Exception as e:
             failed_list.append(file_path)
+                
         
-        
+    
+    
+    #-----------
     if len(failed_list)!=0:
-        sg.popup("File belowed faild to convert !"+failed_list,no_titleba=True)
+       
+        
         import datetime
         current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
 
@@ -54,14 +62,25 @@ def converter(files_number,process_folder,output_dir):
                 pass
 
          # Write the log message to the file
-    with open(log_file_name, 'a') as log_file:
-        import json
-        log_file.write(json.dumps(failed_list))
-        
+        with open(log_file_name, 'a') as log_file:
+            import json
+            log_file.write("----Texture sets belowed failed to convert------ \n \n"+
+                           "-----This issue may arise due to incorrect texture names or forgetting to place the 'mer', height map, or normal map in the selected input folder. ------- \n"
+                           +json.dumps(failed_list).replace(",","\n\n"))
+    
+    
+    sg.popup("There are some texture sets failed to convert,check the log for detail !"
+             )
+    
+   
+    
+    window.close()   
+
+
 
 layout = [
               [sg.Input("Enter bedrock 'Blocks' folder",key='input'),sg.FolderBrowse(key='_BUTTON_KEY_',target='input')],
-              [sg.Input("Enter output folder",key='output'),sg.FolderBrowse(key='_BUTTON_KEY_',target='output')],
+              [sg.Input("output",key='output'),sg.FolderBrowse(key='_BUTTON_KEY_',target='output')],
               [sg.OK("Convert !",size=(40,2),pad=(40,0))]
               
               ]
@@ -79,9 +98,8 @@ while True:
             sg.popup("Found no .textture_set.json file at that folder!")
         else:
             converter(files_num,patterned_list,value["output"])
-            pass
         
-    if event== None or event== sg.WINDOW_CLOSED:
+    if event== sg.WINDOW_CLOSED:
         break
     
     #converter(input_dir,output_dir)

@@ -140,18 +140,18 @@ class Be2Je: # BedrockToJavaTextureConverter
         light_dir = self.lightPos - normals[:,:,:3]
         light_dir /= np.linalg.norm(light_dir) #归一化
         
-        print("\nlight_dir",light_dir)
+        #print("\nlight_dir",light_dir)
         # 计算法线和光照方向的点积
         ao_map_array = ( 
                         (normals[:,:,:3] * light_dir)**intensity /
                         np.linalg.norm((normals[:,:,:3] * light_dir)**intensity) )
         
         # 应用环境光遮蔽效果
-        print("\nao_map",ao_map_array)
+        #print("\nao_map",ao_map_array)
         # 使用高斯滤波器模糊结果，模拟软阴影效果
         ao_map_array = gaussian_filter(ao_map_array, radius)
         
-        print("\nao_map",ao_map_array)
+        #print("\nao_map",ao_map_array)
         ao_map=Image.fromarray(((ao_map_array+1)*128).astype(np.int8),mode='RGB').convert('L')
                
         return ao_map
