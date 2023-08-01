@@ -12,7 +12,7 @@ def converter(files_number,process_folder,output_dir):
     text=window["file_name"]
     progress_bar = window['progressbar']
     
-    faild_list=[]
+    failed_list=[]
     
     for file_path in process_folder:
         processed_num=0
@@ -37,12 +37,26 @@ def converter(files_number,process_folder,output_dir):
             progress_bar.UpdateBar(processed_num)
            
         except Exception as e:
-            faild_list.append(file_path)
+            failed_list.append(file_path)
         
         
-    if len(faild_list)!=0:
-        sg.popup("File belowed faild to convert !"+faild_list,no_titleba=True)
+    if len(failed_list)!=0:
+        sg.popup("File belowed faild to convert !"+failed_list,no_titleba=True)
+        import datetime
+        current_time = datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+
+        # Create the log file with the time stamp in its name
+        log_file_name = f"log_{current_time}.txt"
+
+        # Check if the log file already exists and create it if not
+        if not os.path.exists(log_file_name):
+            with open(log_file_name, 'w'):
+                pass
+
+         # Write the log message to the file
+    with open(log_file_name, 'a') as log_file:
         import json
+        log_file.write(json.dumps(failed_list))
         
 
 layout = [
