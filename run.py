@@ -3,12 +3,13 @@ import PySimpleGUI as sg
 import os
 
 def converter(files_number,process_folder,output_dir):
-    layout = [
+    layout  = [
           [sg.Text("Converting")],
           [sg.ProgressBar(files_number, orientation='h', size=(20, 20), key='progressbar')],
           [sg.Text(key="file_name")],
           [sg.OK("start!")]
-              ]
+                ]
+    
     window=sg.Window("Converting",layout)
     text=window["file_name"]
     progress_bar = window['progressbar']
@@ -42,6 +43,7 @@ def converter(files_number,process_folder,output_dir):
             progress_bar.UpdateBar(processed_num)
         except Exception as e:
             failed_list.append(file_path)
+            continue
                 
         
     
@@ -84,6 +86,7 @@ layout = [
               [sg.OK("Convert !",size=(40,2),pad=(40,0))]
               
               ]
+
 window=sg.Window("MCBE2 MCJE",layout)
 while True:
     event,value=window.read() #value is a directory that every elememt-value pairs was included when specific event occured
