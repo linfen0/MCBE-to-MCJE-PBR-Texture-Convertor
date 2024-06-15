@@ -1,4 +1,4 @@
-from convertor import PBR_Convertor as PBRC
+from Convertor import PBR_Convertor as PBRC
 import PySimpleGUI as sg
 import os
 
